@@ -1,6 +1,6 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
 
-# Vite Vanilla + Laravel Example
+# Vite Vanilla + Laravel + Blade Example
 
 `resources\js\app.js`
 ```js
@@ -62,7 +62,6 @@ document.addEventListener('x.dashboard.detail', function (e) {
         <div id="app" data-page="{{ json_encode($data) }}"></div>
     </body>
 </html>
-
 ```
 
 `app\Http\Controllers\DashboardController.php`
@@ -76,7 +75,7 @@ class DashboardController extends Controller
     {
         return view("app")
             ->with('data', [
-                'component' => 'dashboard.index',
+                'component' => $request->route()->getName(),
                 'numbers' => [1, 2, 3, 4, 5, 6, 7, 8]
             ]);
     }
@@ -85,7 +84,7 @@ class DashboardController extends Controller
     {
         return view("app")
             ->with('data', [
-                'component' => 'dashboard.test',
+                'component' => $request->route()->getName(),
                 'text' => 'testing'
             ]);
     }
@@ -94,7 +93,7 @@ class DashboardController extends Controller
     {
         return view("app")
             ->with('data', [
-                'component' => 'dashboard.detail',
+                'component' => $request->route()->getName(),
                 'detail' => [
                     'id' => 12,
                     'name' => 'Unknown'
