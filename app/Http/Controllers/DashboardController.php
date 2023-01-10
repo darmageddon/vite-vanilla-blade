@@ -11,7 +11,7 @@ class DashboardController extends Controller
     {
         return view("app")
             ->with('data', [
-                'component' => 'dashboard.index',
+                'component' => $request->route()->getName(),
                 'numbers' => [1, 2, 3, 4, 5, 6, 7, 8]
             ]);
     }
@@ -20,7 +20,7 @@ class DashboardController extends Controller
     {
         return view("app")
             ->with('data', [
-                'component' => 'dashboard.test',
+                'component' => $request->route()->getName(),
                 'text' => 'testing'
             ]);
     }
@@ -29,7 +29,7 @@ class DashboardController extends Controller
     {
         return view("app")
             ->with('data', [
-                'component' => 'dashboard.detail',
+                'component' => $request->route()->getName(),
                 'detail' => [
                     'id' => 12,
                     'name' => 'Unknown'
