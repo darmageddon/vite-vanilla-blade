@@ -2,7 +2,7 @@
 
 # Vite Vanilla + Laravel + Blade Example
 
-`resources\js\app.js`
+- `resources\js\app.js`
 ```js
 import './bootstrap';
 import './components/Dashboard';
@@ -18,7 +18,7 @@ const pageEvent = new CustomEvent('x.' + page.component, {
 document.dispatchEvent(pageEvent);
 ```
 
-`resources\js\components\Dashboard.js`
+- `resources\js\components\Dashboard.js`
 ```js
 document.addEventListener('x.dashboard.index', function (e) {
     const numbers = e.detail.numbers;
@@ -46,8 +46,8 @@ document.addEventListener('x.dashboard.detail', function (e) {
 });
 ```
 
-`resources\views\app.blade.php`
-```
+- `resources\views\app.blade.php`
+```blade
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -63,8 +63,24 @@ document.addEventListener('x.dashboard.detail', function (e) {
     </body>
 </html>
 ```
+- `app\Providers\AppServiceProvider.php`
+```php
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 
-`app\Http\Controllers\DashboardController.php`
+public function boot()
+{
+    View::composer('*', function ($view) {
+        $viewData = $view->getData();
+        $data = isset($viewData['data']) ? $viewData['data'] : [];
+        $view->with('data', array_merge($data, [
+            'component' => Route::currentRouteName()
+        ]));
+    });
+}
+```
+
+- `app\Http\Controllers\DashboardController.php`
 ```php
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -75,7 +91,6 @@ class DashboardController extends Controller
     {
         return view("app")
             ->with('data', [
-                'component' => $request->route()->getName(),
                 'numbers' => [1, 2, 3, 4, 5, 6, 7, 8]
             ]);
     }
@@ -84,7 +99,6 @@ class DashboardController extends Controller
     {
         return view("app")
             ->with('data', [
-                'component' => $request->route()->getName(),
                 'text' => 'testing'
             ]);
     }
@@ -93,7 +107,6 @@ class DashboardController extends Controller
     {
         return view("app")
             ->with('data', [
-                'component' => $request->route()->getName(),
                 'detail' => [
                     'id' => 12,
                     'name' => 'Unknown'
