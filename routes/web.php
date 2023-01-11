@@ -1,7 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\{
+    DashboardController,
+    UserController
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -17,3 +20,7 @@ use App\Http\Controllers\DashboardController;
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
 Route::get('/test', [DashboardController::class, 'test'])->name('dashboard.test');
 Route::get('/detail', [DashboardController::class, 'detail'])->name('dashboard.detail');
+
+
+Route::get('/users', [UserController::class, 'index'])->name('users.index');
+Route::get('/users/{id}', [UserController::class, 'getUser'])->name('users.detail');
