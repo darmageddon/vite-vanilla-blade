@@ -1,15 +1,30 @@
 import './bootstrap';
-import { init, afterInit } from './components/Core';
-import './components/Components';
 
-const root = document.getElementById('app');
-const page = JSON.parse(root.dataset.page);
+(function () {
+    const root = document.getElementsByTagName('body')[0];
+    const page = JSON.parse(root.dataset.page);
 
-const pageEvent = new CustomEvent('x.' + page.component, {
-    detail: page
-});
+    window.ComponentData = page;
 
-init();
-afterInit();
+    const getComponentName = (raw) => {
+        return raw.split('.')
+            .map((name) => _.upperFirst(name))
+            .join("/");
+    }
 
-document.dispatchEvent(pageEvent);
+    const routename = route().current();
+    const componentName = page.component ?? getComponentName(routename);
+
+    const component = './components/' + componentName + '.js';
+    const modules = import.meta.glob('./components/**/*.js');
+
+    // Load core component
+    if (Object.hasOwn(modules, './components/Core.js')) {
+        modules['./components/Core.js']();
+    }
+
+    // Load other component
+    if (Object.hasOwn(modules, component) && page.component !== 'Core') {
+        modules[component]();
+    }
+})();

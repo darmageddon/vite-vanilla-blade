@@ -1,12 +1,15 @@
-const init = () => {
-    console.log('Running in every page...')
-}
+(function () {
+    const init = () => {
+        console.log('Running in every page...');
+    }
 
-const afterInit = () => {
-    console.log(`Current route: ${route().current()}`)
-}
+    const afterInit = () => {
+        console.log(`Current route: ${route().current()}`);
+    }
 
-export {
-    init,
-    afterInit
-}
+    // IIFE
+    (function () {
+        init();
+        afterInit();
+    })();
+})();
