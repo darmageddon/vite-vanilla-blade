@@ -1,9 +1,8 @@
 import axios from "axios";
 
-document.addEventListener('x.users.index', function (e) {
-
+(function () {
     // destructure objects
-    const { users } = e.detail;
+    const { users } = ComponentData;
 
     const getUserById = (id) => {
         const url = '/users/' + id;
@@ -38,4 +37,4 @@ document.addEventListener('x.users.index', function (e) {
         getUsers();
 
     })();
-});
+})();

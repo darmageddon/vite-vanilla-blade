@@ -5,73 +5,63 @@
 - `resources\js\app.js`
 ```js
 import './bootstrap';
-import { init, afterInit } from './components/Core';
-import './components/Components';
 
-const root = document.getElementById('app');
-const page = JSON.parse(root.dataset.page);
+(function () {
+    const root = document.getElementsByTagName('body')[0];
+    const page = JSON.parse(root.dataset.page);
 
-const pageEvent = new CustomEvent('x.' + page.component, {
-    detail: page
-});
+    window.ComponentData = page;
 
-init();
-afterInit();
+    const getComponentName = (raw) => {
+        return raw.split('.')
+            .map((name) => _.upperFirst(name))
+            .join("/");
+    }
 
-document.dispatchEvent(pageEvent);
+    const routename = route().current();
+    const componentName = page.component ?? getComponentName(routename);
+
+    const component = './components/' + componentName + '.js';
+    const modules = import.meta.glob('./components/**/*.js');
+
+    // Load core component
+    if (Object.hasOwn(modules, './components/Core.js')) {
+        modules['./components/Core.js']();
+    }
+
+    // Load other component
+    if (Object.hasOwn(modules, component) && page.component !== 'Core') {
+        modules[component]();
+    }
+})();
 ```
 
 - `resources\js\components\Core.js`
 ```js
-const init = () => {
-    console.log('Running in every page...')
-}
+(function () {
+    const init = () => {
+        console.log('Running in every page...');
+    }
 
-const afterInit = () => {
-    console.log(`Current route: ${route().current()}`)
-}
+    const afterInit = () => {
+        console.log(`Current route: ${route().current()}`);
+    }
 
-export {
-    init,
-    afterInit
-}
-```
-- `resources\js\components\Dashboard.js`
-```js
-document.addEventListener('x.dashboard.index', function (e) {
-    const numbers = e.detail.numbers;
-    const total = numbers.reduce((previousValue, currentValue) => {
-        previousValue += currentValue;
-        return previousValue;
-    }, 0);
-
-    // 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 = 36
-    console.log(`${numbers.join(' + ')} = ${total}`);
-});
-
-document.addEventListener('x.dashboard.test', function (e) {
-    const text = e.detail.text;
-
-    // Text is testing
-    console.log('Text is ' + text);
-});
-
-document.addEventListener('x.dashboard.detail', function (e) {
-    const detail = e.detail.detail;
-
-    // Detail: Id=12; Name=Unknown; Route=dashboard.detail
-    console.log(`Detail: Id=${detail.id}; Name=${detail.name}; Route=${route().current()}`);
-});
+    // IIFE
+    (function () {
+        init();
+        afterInit();
+    })();
+})();
 ```
 
-- Example with IIFE and Axios call. `resources\js\components\User.js`
+- `resources\js\components\Users\Index.js`
 ```js
 import axios from "axios";
 
-document.addEventListener('x.users.index', function (e) {
-
+(function () {
     // destructure objects
-    const { users } = e.detail;
+    const { users } = ComponentData;
 
     const getUserById = (id) => {
         const url = '/users/' + id;
@@ -106,75 +96,81 @@ document.addEventListener('x.users.index', function (e) {
         getUsers();
 
     })();
-});
+})();
 ```
 
 - `resources\views\app.blade.php`
 ```blade
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>Laravel</title>
-        @routes
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body>
-        <div id="app" data-page="{{ json_encode($data) }}"></div>
-    </body>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Laravel</title>
+    @routes
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+
+<body data-page="{{ json_encode($data) }}">
+</body>
+
 </html>
 ```
-- `app\Providers\AppServiceProvider.php`
-```php
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\View;
 
-public function boot()
-{
-    View::composer('*', function ($view) {
-        $viewData = $view->getData();
-        $data = isset($viewData['data']) ? $viewData['data'] : [];
-        $view->with('data', array_merge($data, [
-            'component' => Route::currentRouteName()
-        ]));
-    });
-}
-```
-
-- `app\Http\Controllers\DashboardController.php`
+- `app\Http\Controllers\UserController.php`
 ```php
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
-class DashboardController extends Controller
+class UserController extends Controller
 {
+    private array $users;
+
+    public function __construct()
+    {
+        $this->users = [
+            [
+                'id' => 1,
+                'name' => 'Lorem'
+            ],
+            [
+                'id' => 2,
+                'name' => 'Ipsum'
+            ],
+        ];
+    }
+
     public function index(Request $request)
     {
         return view("app")
             ->with('data', [
-                'numbers' => [1, 2, 3, 4, 5, 6, 7, 8]
+                'users' => $this->users
             ]);
     }
 
-    public function test(Request $request)
+    public function getUser(Request $request, int $id)
     {
-        return view("app")
-            ->with('data', [
-                'text' => 'testing'
-            ]);
-    }
+        $ids = array_column($this->users, 'id');
+        $index = array_search($id, $ids);
 
-    public function detail(Request $request)
-    {
-        return view("app")
-            ->with('data', [
-                'detail' => [
-                    'id' => 12,
-                    'name' => 'Unknown'
-                ]
-            ]);
+        if ($index !== false) {
+            return response()->json(
+                data: $this->users[$index]
+            );
+        }
+
+        throw new HttpResponseException(
+            response: response()->json(
+                data: [
+                    'status' => 'ERR001',
+                    'message' => 'User not found.'
+                ],
+                status: 404
+            )
+        );
     }
 }
 ```
