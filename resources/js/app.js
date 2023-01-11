@@ -1,7 +1,6 @@
 import './bootstrap';
 import { init, afterInit } from './components/Core';
-import './components/Dashboard';
-import './components/User';
+import './components/Components';
 
 const root = document.getElementById('app');
 const page = JSON.parse(root.dataset.page);

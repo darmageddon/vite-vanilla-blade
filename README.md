@@ -5,8 +5,8 @@
 - `resources\js\app.js`
 ```js
 import './bootstrap';
-import './components/Dashboard';
-import './components/User';
+import { init, afterInit } from './components/Core';
+import './components/Components';
 
 const root = document.getElementById('app');
 const page = JSON.parse(root.dataset.page);
@@ -15,9 +15,27 @@ const pageEvent = new CustomEvent('x.' + page.component, {
     detail: page
 });
 
+init();
+afterInit();
+
 document.dispatchEvent(pageEvent);
 ```
 
+- `resources\js\components\Core.js`
+```js
+const init = () => {
+    console.log('Running in every page...')
+}
+
+const afterInit = () => {
+    console.log(`Current route: ${route().current()}`)
+}
+
+export {
+    init,
+    afterInit
+}
+```
 - `resources\js\components\Dashboard.js`
 ```js
 document.addEventListener('x.dashboard.index', function (e) {
@@ -43,6 +61,51 @@ document.addEventListener('x.dashboard.detail', function (e) {
 
     // Detail: Id=12; Name=Unknown; Route=dashboard.detail
     console.log(`Detail: Id=${detail.id}; Name=${detail.name}; Route=${route().current()}`);
+});
+```
+
+- Example with IIFE and Axios call. `resources\js\components\User.js`
+```js
+import axios from "axios";
+
+document.addEventListener('x.users.index', function (e) {
+
+    // destructure objects
+    const { users } = e.detail;
+
+    const getUserById = (id) => {
+        const url = '/users/' + id;
+        return axios.get(url);
+    }
+
+    const getUsers = () => {
+        const usersRequests = users.map(user => getUserById(user.id));
+
+        Promise.all(usersRequests)
+            .then(function (results) {
+                results.forEach(response => {
+                    const user = response.data;
+                    console.log(`User: Id=${user.id}; Name=${user.name}`);
+                });
+            }).catch(function (error) {
+                if (error.response) {
+                    console.log(error.response.data);
+                } else if (error.request) {
+                    console.log(error.request);
+                } else {
+                    console.log('Error', error.message);
+                }
+            }).then(function () {
+                console.log('Done.');
+            });
+    }
+
+    // IIFE (Immediately Invoked Function Expression)
+    (function () {
+
+        getUsers();
+
+    })();
 });
 ```
 
